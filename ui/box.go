@@ -12,12 +12,12 @@ import (
 // Box represents a rectangular container with optional border and title.
 type Box struct {
 	*core.Component
-	title       string
-	content     string
-	padding     int
-	border      bool
-	borderStyle *style.Color
-	titleStyle  *style.Color
+	title        string
+	content      string
+	padding      int
+	border       bool
+	borderStyle  *style.Color
+	titleStyle   *style.Color
 	contentStyle *style.Color
 }
 
@@ -110,7 +110,7 @@ func (b *Box) Render(theme *style.Theme) string {
 func (b *Box) calculateWidth() int {
 	// Calculate width based on content
 	maxWidth := runewidth.StringWidth(b.title)
-	
+
 	lines := strings.Split(b.content, "\n")
 	for _, line := range lines {
 		lineWidth := runewidth.StringWidth(line)
@@ -118,7 +118,7 @@ func (b *Box) calculateWidth() int {
 			maxWidth = lineWidth
 		}
 	}
-	
+
 	// Add padding and border
 	return maxWidth + (b.padding * 2) + 2 // 2 for border
 }
@@ -128,17 +128,17 @@ func (b *Box) calculateHeight(width int) int {
 	if contentWidth <= 0 {
 		contentWidth = 1
 	}
-	
+
 	// Count wrapped lines
 	lines := strings.Split(b.content, "\n")
 	totalLines := 0
-	
+
 	for _, line := range lines {
 		if line == "" {
 			totalLines++
 			continue
 		}
-		
+
 		lineWidth := runewidth.StringWidth(line)
 		wrappedLines := (lineWidth + contentWidth - 1) / contentWidth // Ceiling division
 		if wrappedLines == 0 {
@@ -146,13 +146,13 @@ func (b *Box) calculateHeight(width int) int {
 		}
 		totalLines += wrappedLines
 	}
-	
+
 	// Add padding, border, and title
 	height := totalLines + (b.padding * 2) + 2 // 2 for top and bottom border
 	if b.title != "" {
 		height++ // Extra line for title
 	}
-	
+
 	return height
 }
 
@@ -177,19 +177,26 @@ func (b *Box) renderWithBorder(theme *style.Theme, width, height int) string {
 	}
 
 	var result []string
-	
+
 	// Top border with title
 	if b.title != "" {
 		titleStr := b.title
 		titleWidth := runewidth.StringWidth(titleStr)
-		if titleWidth > width-4 { // Leave space for borders and padding
-			titleStr = runewidth.Truncate(titleStr, width-4, "…")
-			titleWidth = width - 4
+
+		// Calculate available space for title (accounting for borders and brackets)
+		availableWidth := width - 2         // Account for left and right borders
+		maxTitleWidth := availableWidth - 4 // Account for "[ ]" brackets
+
+		if titleWidth > maxTitleWidth {
+			titleStr = runewidth.Truncate(titleStr, maxTitleWidth, "…")
+			titleWidth = maxTitleWidth
 		}
-		
-		leftPadding := (width - titleWidth - 4) / 2 // 4 for "[ ]"
-		rightPadding := width - titleWidth - leftPadding - 4
-		
+
+		// Calculate padding to center the title
+		totalPadding := availableWidth - titleWidth - 4 // 4 for "[ ]"
+		leftPadding := totalPadding / 2
+		rightPadding := totalPadding - leftPadding
+
 		topLine := borderColor.Sprint(style.BoxTopLeft) +
 			strings.Repeat(borderColor.Sprint(style.BoxHorizontal), leftPadding) +
 			borderColor.Sprint("[ ") + titleColor.Sprint(titleStr) + borderColor.Sprint(" ]") +
@@ -228,7 +235,7 @@ func (b *Box) renderWithBorder(theme *style.Theme, width, height int) string {
 		if i < len(contentLines) {
 			line = contentColor.Sprint(contentLines[i])
 		}
-		
+
 		// Pad line to fit width
 		lineWidth := runewidth.StringWidth(core.StripANSI(line))
 		padding := contentWidth - lineWidth
