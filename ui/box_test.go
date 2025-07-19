@@ -100,12 +100,72 @@ func TestBoxContentAlignment(t *testing.T) {
 	}
 
 	// Check content line (should be left-aligned)
-	contentLine := lines[2] // Skip title and padding
+	contentLine := lines[1] // Skip title, no padding now
 	cleanLine := stripANSI(contentLine)
 
 	// Should start with border and padding, then content
 	if !strings.HasPrefix(cleanLine, "│ Left aligned content") {
 		t.Errorf("Content not left-aligned: %q", cleanLine)
+	}
+}
+
+func TestBoxNoExtraEmptyLines(t *testing.T) {
+	tests := []struct {
+		name     string
+		content  string
+		expected int // Expected number of content lines (excluding borders and padding)
+	}{
+		{
+			name:     "Single line content",
+			content:  "Single line",
+			expected: 1,
+		},
+		{
+			name:     "Two line content",
+			content:  "Line 1\nLine 2",
+			expected: 2,
+		},
+		{
+			name:     "Empty content",
+			content:  "",
+			expected: 1, // Empty content should still render one line
+		},
+		{
+			name:     "Multiple lines with empty lines",
+			content:  "Line 1\n\nLine 3",
+			expected: 3,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			box := NewBox().
+				Title("Test").
+				Content(tt.content).
+				Width(30)
+
+			result := box.Render(style.DefaultTheme())
+			lines := strings.Split(result, "\n")
+
+			// Count content lines (excluding borders and padding)
+			contentLines := 0
+			startedContent := false
+			for _, line := range lines {
+				cleanLine := stripANSI(line)
+				if strings.HasPrefix(cleanLine, "│") && !strings.HasPrefix(cleanLine, "╭") && !strings.HasPrefix(cleanLine, "╰") {
+					// This is a content line (has vertical border but not corner)
+					if !startedContent {
+						startedContent = true
+					}
+					contentLines++
+				}
+			}
+
+			if contentLines != tt.expected {
+				t.Errorf("Expected %d content lines, got %d", tt.expected, contentLines)
+				t.Logf("Full output:\n%s", result)
+			}
+		})
 	}
 }
 

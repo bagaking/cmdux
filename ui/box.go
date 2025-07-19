@@ -218,23 +218,10 @@ func (b *Box) renderWithBorder(theme *style.Theme, width, height int) string {
 
 	// Wrap and pad content
 	contentLines := b.wrapContent(contentWidth)
-	contentHeight := height - 2 // Remove top and bottom borders
 
-	// Add padding rows at top
-	for i := 0; i < b.padding; i++ {
-		paddingLine := borderColor.Sprint(style.BoxVertical) +
-			strings.Repeat(" ", width-2) +
-			borderColor.Sprint(style.BoxVertical)
-		result = append(result, paddingLine)
-		contentHeight--
-	}
-
-	// Add content lines
-	for i := 0; i < contentHeight-b.padding; i++ {
-		var line string
-		if i < len(contentLines) {
-			line = contentColor.Sprint(contentLines[i])
-		}
+	// Add content lines (no padding rows)
+	for i := 0; i < len(contentLines); i++ {
+		line := contentColor.Sprint(contentLines[i])
 
 		// Pad line to fit width
 		lineWidth := runewidth.StringWidth(core.StripANSI(line))
@@ -249,14 +236,6 @@ func (b *Box) renderWithBorder(theme *style.Theme, width, height int) string {
 			strings.Repeat(" ", b.padding) +
 			borderColor.Sprint(style.BoxVertical)
 		result = append(result, contentLine)
-	}
-
-	// Add padding rows at bottom
-	for i := 0; i < b.padding; i++ {
-		paddingLine := borderColor.Sprint(style.BoxVertical) +
-			strings.Repeat(" ", width-2) +
-			borderColor.Sprint(style.BoxVertical)
-		result = append(result, paddingLine)
 	}
 
 	// Bottom border
